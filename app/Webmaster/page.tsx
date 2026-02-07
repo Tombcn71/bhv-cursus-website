@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import {
   Card,
@@ -24,7 +24,8 @@ interface CourseWithBookings {
   priceId: string;
 }
 
-export default function WebmasterPage() {
+// Dit is je originele logica, nu in een aparte functie voor Suspense
+function DashboardContent() {
   const searchParams = useSearchParams();
   const urlKey = searchParams.get("key");
 
@@ -36,7 +37,7 @@ export default function WebmasterPage() {
     null,
   );
 
-  const CORRECT_KEY = process.env.NEXT_PUBLIC_WEBMASTER_KEY || "geheim123"; // In production use env var
+  const CORRECT_KEY = process.env.NEXT_PUBLIC_WEBMASTER_KEY || "geheim123";
 
   useEffect(() => {
     if (urlKey === CORRECT_KEY) {
@@ -44,7 +45,7 @@ export default function WebmasterPage() {
       setKey(urlKey);
       loadCourses();
     }
-  }, [urlKey]);
+  }, [urlKey, CORRECT_KEY]);
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
@@ -75,11 +76,7 @@ export default function WebmasterPage() {
     setDownloadingCourse(courseId);
     try {
       const response = await fetch(`/api/webmaster/export/${courseId}`);
-
-      if (!response.ok) {
-        throw new Error("Export failed");
-      }
-
+      if (!response.ok) throw new Error("Export failed");
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
@@ -112,15 +109,13 @@ export default function WebmasterPage() {
           </CardHeader>
           <CardContent>
             <form onSubmit={handleLogin} className="space-y-4">
-              <div>
-                <Input
-                  type="password"
-                  placeholder="Toegangssleutel"
-                  value={key}
-                  onChange={(e) => setKey(e.target.value)}
-                  className="text-center"
-                />
-              </div>
+              <Input
+                type="password"
+                placeholder="Toegangssleutel"
+                value={key}
+                onChange={(e) => setKey(e.target.value)}
+                className="text-center"
+              />
               <Button
                 type="submit"
                 className="w-full bg-orange hover:bg-orange/90">
@@ -168,9 +163,7 @@ export default function WebmasterPage() {
                           <Calendar className="w-4 h-4" />
                           <span>{course.date}</span>
                         </div>
-                        <div className="flex items-center gap-2">
-                          <span>{course.dayOfWeek}</span>
-                        </div>
+                        <div>{course.dayOfWeek}</div>
                       </div>
                     </div>
                     <div className="flex gap-2">
@@ -185,44 +178,45 @@ export default function WebmasterPage() {
                     </div>
                   </div>
                 </CardHeader>
-                <CardContent>
-                  <div className="flex justify-end">
-                    <Button
-                      onClick={() => handleDownload(course.id, course.title)}
-                      disabled={
-                        downloadingCourse === course.id ||
-                        course.totalParticipants === 0
-                      }
-                      className="bg-orange hover:bg-orange/90">
-                      {downloadingCourse === course.id ? (
-                        <>
-                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                          Downloaden...
-                        </>
-                      ) : (
-                        <>
-                          <Download className="w-4 h-4 mr-2" />
-                          Download Excel
-                        </>
-                      )}
-                    </Button>
-                  </div>
+                <CardContent className="flex justify-end">
+                  <Button
+                    onClick={() => handleDownload(course.id, course.title)}
+                    disabled={
+                      downloadingCourse === course.id ||
+                      course.totalParticipants === 0
+                    }
+                    className="bg-orange hover:bg-orange/90">
+                    {downloadingCourse === course.id ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />{" "}
+                        Downloaden...
+                      </>
+                    ) : (
+                      <>
+                        <Download className="w-4 h-4 mr-2" /> Download Excel
+                      </>
+                    )}
+                  </Button>
                 </CardContent>
               </Card>
             ))}
           </div>
         )}
-
-        <Card className="mt-8 border-orange/20 bg-orange/5">
-          <CardContent className="py-6">
-            <p className="text-sm text-muted-foreground">
-              <strong>Let op:</strong> De Excel bestanden bevatten
-              persoonsgegevens. Behandel deze vertrouwelijk en deel ze alleen
-              met de instructeur.
-            </p>
-          </CardContent>
-        </Card>
       </div>
     </div>
+  );
+}
+
+// Dit is de hoofdexport die Next.js tevreden houdt tijdens de build
+export default function WebmasterPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center">
+          <Loader2 className="w-8 h-8 animate-spin text-orange" />
+        </div>
+      }>
+      <DashboardContent />
+    </Suspense>
   );
 }
