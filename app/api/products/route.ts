@@ -10,8 +10,9 @@ function getStripe() {
       throw new Error("STRIPE_SECRET_KEY is missing in environment variables");
     }
     stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-      // Gebruik 'as any' om de specifieke TS-versie check te negeren
-      apiVersion: "2025-01-27" as any,
+      // We gebruiken 'as any' om TypeScript tevreden te houden,
+      // maar we gebruiken de versie die de library verwacht.
+      apiVersion: "2026-01-28.clover" as any,
     });
   }
   return stripe;

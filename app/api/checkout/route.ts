@@ -22,7 +22,9 @@ export async function POST(req: Request) {
   }
 
   const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-    apiVersion: "2024-11-20.acacia" as any, // 'as any' voorkomt type-conflicten
+    // We gebruiken 'as any' om TypeScript tevreden te houden,
+    // maar we gebruiken de versie die de library verwacht.
+    apiVersion: "2026-01-28.clover" as any,
   });
 
   try {
