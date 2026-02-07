@@ -1,21 +1,30 @@
-import { NextResponse } from 'next/server';
-import Stripe from 'stripe';
-
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2026-01-28.clover',
-});
-
-const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET!;
+import { NextResponse } from "next/server";
+import Stripe from "stripe";
 
 export async function POST(req: Request) {
+  // 1. Initialiseer Stripe pas HIER
+  if (!process.env.STRIPE_SECRET_KEY) {
+    return NextResponse.json(
+      { error: "Stripe Secret Key missing" },
+      { status: 500 },
+    );
+  }
+
+  const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
+    apiVersion: "2026-01-28.clover" as any,
+  });
+
+  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+
   try {
     const body = await req.text();
-    const signature = req.headers.get('stripe-signature');
+    const signature = req.headers.get("stripe-signature");
 
-    if (!signature) {
+    if (!signature || !webhookSecret) {
+      console.error("Missing signature or webhook secret");
       return NextResponse.json(
-        { error: 'No signature' },
-        { status: 400 }
+        { error: "No signature or secret" },
+        { status: 400 },
       );
     }
 
@@ -24,31 +33,28 @@ export async function POST(req: Request) {
     try {
       event = stripe.webhooks.constructEvent(body, signature, webhookSecret);
     } catch (err) {
-      console.error('Webhook signature verification failed:', err);
-      return NextResponse.json(
-        { error: 'Invalid signature' },
-        { status: 400 }
-      );
+      console.error("Webhook signature verification failed:", err);
+      return NextResponse.json({ error: "Invalid signature" }, { status: 400 });
     }
 
     // Handle successful payment
-    if (event.type === 'checkout.session.completed') {
+    if (event.type === "checkout.session.completed") {
       const session = event.data.object as Stripe.Checkout.Session;
 
-      // Get line items to find which products were purchased
-      const lineItems = await stripe.checkout.sessions.listLineItems(session.id, {
-        expand: ['data.price.product'],
-      });
+      const lineItems = await stripe.checkout.sessions.listLineItems(
+        session.id,
+        {
+          expand: ["data.price.product"],
+        },
+      );
 
-      // Update inventory for each purchased product
       for (const item of lineItems.data) {
         const price = item.price!;
         const product = price.product as Stripe.Product;
 
-        const currentSpots = parseInt(product.metadata.huidige_plekken || '0');
+        const currentSpots = parseInt(product.metadata.huidige_plekken || "0");
         const quantity = item.quantity || 1;
 
-        // Update the product metadata with new spot count
         await stripe.products.update(product.id, {
           metadata: {
             ...product.metadata,
@@ -56,16 +62,18 @@ export async function POST(req: Request) {
           },
         });
 
-        console.log(`Updated ${product.name}: ${currentSpots} -> ${currentSpots + quantity} booked spots`);
+        console.log(
+          `Updated ${product.name}: ${currentSpots} -> ${currentSpots + quantity} booked spots`,
+        );
       }
     }
 
     return NextResponse.json({ received: true });
   } catch (error) {
-    console.error('Webhook error:', error);
+    console.error("Webhook error:", error);
     return NextResponse.json(
-      { error: 'Webhook handler failed' },
-      { status: 500 }
+      { error: "Webhook handler failed" },
+      { status: 500 },
     );
   }
 }

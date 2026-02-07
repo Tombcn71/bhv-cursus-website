@@ -1,10 +1,6 @@
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: "2024-11-20.acacia",
-});
-
 interface Participant {
   aanhef: string;
   voorletters: string;
@@ -17,6 +13,18 @@ interface Participant {
 }
 
 export async function POST(req: Request) {
+  // Verplaats de initialisatie naar HIER
+  if (!process.env.STRIPE_SECRET_KEY) {
+    return NextResponse.json(
+      { error: "Stripe Secret Key is missing in server environment" },
+      { status: 500 },
+    );
+  }
+
+  const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
+    apiVersion: "2024-11-20.acacia" as any, // 'as any' voorkomt type-conflicten
+  });
+
   try {
     const { courseId, priceId, quantity, participants } = await req.json();
 
