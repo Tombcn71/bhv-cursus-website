@@ -1,0 +1,76 @@
+import { NextResponse } from "next/server";
+import Stripe from "stripe";
+
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+  apiVersion: "2024-11-20.acacia",
+});
+
+interface Participant {
+  aanhef: string;
+  voorletters: string;
+  voornaam: string;
+  tussenvoegsel: string;
+  achternaam: string;
+  geboortedatum: string;
+  telefoon: string;
+  email: string;
+}
+
+export async function POST(req: Request) {
+  try {
+    const { courseId, priceId, quantity, participants } = await req.json();
+
+    if (!priceId || !quantity) {
+      return NextResponse.json(
+        { error: "Price ID and quantity are required" },
+        { status: 400 },
+      );
+    }
+
+    // Convert participants array to flat metadata object
+    const metadata: Record<string, string> = {
+      course_id: courseId,
+      aantal_deelnemers: quantity.toString(),
+    };
+
+    if (participants && Array.isArray(participants)) {
+      participants.forEach((participant: Participant, index: number) => {
+        const num = index + 1;
+        metadata[`deelnemer_${num}_aanhef`] = participant.aanhef;
+        metadata[`deelnemer_${num}_voorletters`] = participant.voorletters;
+        metadata[`deelnemer_${num}_voornaam`] = participant.voornaam;
+        metadata[`deelnemer_${num}_tussenvoegsel`] =
+          participant.tussenvoegsel || "";
+        metadata[`deelnemer_${num}_achternaam`] = participant.achternaam;
+        metadata[`deelnemer_${num}_geboortedatum`] = participant.geboortedatum;
+        metadata[`deelnemer_${num}_telefoon`] = participant.telefoon;
+        metadata[`deelnemer_${num}_email`] = participant.email;
+      });
+    }
+
+    const session = await stripe.checkout.sessions.create({
+      line_items: [
+        {
+          price: priceId,
+          quantity: quantity,
+        },
+      ],
+      mode: "payment",
+      success_url: `${process.env.NEXT_PUBLIC_URL}/success?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${process.env.NEXT_PUBLIC_URL}/inschrijven/${courseId}`,
+      automatic_tax: { enabled: false },
+      billing_address_collection: "required",
+      phone_number_collection: { enabled: true },
+      locale: "nl",
+      metadata: metadata,
+    });
+
+    return NextResponse.json({ url: session.url });
+  } catch (error) {
+    console.error("Error creating checkout session:", error);
+    return NextResponse.json(
+      { error: "Failed to create checkout session" },
+      { status: 500 },
+    );
+  }
+}
