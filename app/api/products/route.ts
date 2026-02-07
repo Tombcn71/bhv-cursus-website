@@ -1,9 +1,21 @@
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: "2026-01-28.clover",
-});
+// We initialiseren stripe pas binnen de functie om build-errors te voorkomen
+let stripe: Stripe | null = null;
+
+function getStripe() {
+  if (!stripe) {
+    if (!process.env.STRIPE_SECRET_KEY) {
+      throw new Error("STRIPE_SECRET_KEY is missing in environment variables");
+    }
+    stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
+      // Gebruik 'as any' om de specifieke TS-versie check te negeren
+      apiVersion: "2025-01-27" as any,
+    });
+  }
+  return stripe;
+}
 
 // Helper functie om datum te formatteren
 function formatDutchDate(dateString: string): string {
@@ -29,7 +41,9 @@ function formatDutchDate(dateString: string): string {
 
 export async function GET() {
   try {
-    const products = await stripe.products.list({
+    const stripeInstance = getStripe();
+
+    const products = await stripeInstance.products.list({
       active: true,
       expand: ["data.default_price"],
     });
@@ -38,13 +52,11 @@ export async function GET() {
       .map((product) => {
         const price = product.default_price as Stripe.Price;
 
-        // Trim all metadata keys to remove spaces
         const meta: Record<string, string> = {};
         Object.keys(product.metadata).forEach((key) => {
           meta[key.trim()] = product.metadata[key];
         });
 
-        // Parse datum voor sortering
         const datumStr = meta.datum || meta.date;
         const datum = datumStr ? new Date(datumStr) : new Date();
 
@@ -53,7 +65,7 @@ export async function GET() {
           priceId: price.id,
           title: product.name,
           description: product.description || "",
-          date: datumStr ? formatDutchDate(datumStr) : "Datum volgt", // ← Geformatteerd
+          date: datumStr ? formatDutchDate(datumStr) : "Datum volgt",
           dayOfWeek: meta.tijd || "Tijd volgt",
           location: meta.locatie || "",
           address: meta.adres || "",
