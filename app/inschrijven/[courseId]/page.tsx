@@ -149,16 +149,16 @@ export default function InschrijvenPage() {
   };
 
   const isFormValid = () => {
-    return participants.every(
-      (p) =>
-        p.aanhef &&
-        p.voorletters &&
-        p.voornaam &&
-        p.achternaam &&
-        p.geboortedatum &&
-        p.telefoon &&
-        p.email,
-    );
+    return participants.every((p) => {
+      return (
+        p.aanhef !== "" &&
+        p.voornaam.trim() !== "" &&
+        p.achternaam.trim() !== "" &&
+        p.geboortedatum !== "" &&
+        p.email.includes("@") &&
+        p.telefoon.trim().length > 5
+      );
+    });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {

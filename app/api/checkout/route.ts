@@ -57,7 +57,7 @@ export async function POST(req: Request) {
         metadata[`deelnemer_${num}_email`] = participant.email;
       });
     }
-
+    const baseUrl = process.env.NEXT_PUBLIC_URL;
     const session = await stripe.checkout.sessions.create({
       line_items: [
         {
@@ -66,8 +66,9 @@ export async function POST(req: Request) {
         },
       ],
       mode: "payment",
-      success_url: `${process.env.NEXT_PUBLIC_URL}/success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${process.env.NEXT_PUBLIC_URL}/inschrijven/${courseId}`,
+      // Gebruik {CHECKOUT_SESSION_ID} (Stripe vult dit zelf in)
+      success_url: `${baseUrl}/success?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${baseUrl}/inschrijven/${courseId}`,
       automatic_tax: { enabled: false },
       billing_address_collection: "required",
       phone_number_collection: { enabled: true },
@@ -77,9 +78,9 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ url: session.url });
   } catch (error) {
-    console.error("Error creating checkout session:", error);
+    console.error("Error creating  session:", error);
     return NextResponse.json(
-      { error: "Failed to create checkout session" },
+      { error: "Failed to create  session" },
       { status: 500 },
     );
   }
