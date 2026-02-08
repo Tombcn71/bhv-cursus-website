@@ -24,6 +24,7 @@ export function Navigation() {
     { label: "Reviews", href: "#reviews" },
     { label: "FAQ", href: "#faq" },
     { label: "Contact", href: "/contact" },
+    { label: "Inschrijven", href: "/inschrijven" },
   ];
 
   return (
@@ -35,8 +36,7 @@ export function Navigation() {
         isScrolled
           ? "bg-background/95 backdrop-blur-md shadow-sm border-b border-border"
           : "bg-transparent"
-      }`}
-    >
+      }`}>
       <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16 md:h-20">
           {/* Logo */}
@@ -44,7 +44,9 @@ export function Navigation() {
             <div className="w-10 h-10 bg-orange rounded-lg flex items-center justify-center">
               <Shield className="w-6 h-6 text-white" />
             </div>
-            <span className="font-semibold text-lg text-navy">BHV-certificering</span>
+            <span className="font-semibold text-lg text-navy">
+              BHV-certificering
+            </span>
           </Link>
 
           {/* Desktop Navigation */}
@@ -53,8 +55,7 @@ export function Navigation() {
               <Link
                 key={item.label}
                 href={item.href}
-                className="text-sm font-medium text-muted-foreground hover:text-navy transition-colors"
-              >
+                className="text-sm font-medium text-muted-foreground hover:text-navy transition-colors">
                 {item.label}
               </Link>
             ))}
@@ -68,8 +69,7 @@ export function Navigation() {
             <Button
               size="sm"
               className="bg-orange text-accent-foreground hover:bg-orange/90 font-semibold"
-              asChild
-            >
+              asChild>
               <a href="#cursussen">Direct Boeken</a>
             </Button>
           </div>
@@ -79,9 +79,12 @@ export function Navigation() {
             type="button"
             className="md:hidden p-2 text-navy"
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            aria-label="Toggle menu"
-          >
-            {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+            aria-label="Toggle menu">
+            {isMobileMenuOpen ? (
+              <X className="w-6 h-6" />
+            ) : (
+              <Menu className="w-6 h-6" />
+            )}
           </button>
         </div>
 
@@ -93,24 +96,26 @@ export function Navigation() {
               animate={{ opacity: 1, height: "auto" }}
               exit={{ opacity: 0, height: 0 }}
               transition={{ duration: 0.2 }}
-              className="md:hidden bg-background border-t border-border"
-            >
+              className="md:hidden bg-background border-t border-border">
               <div className="py-4 space-y-2">
                 {navItems.map((item) => (
                   <Link
                     key={item.label}
                     href={item.href}
                     className="block px-4 py-2 text-sm font-medium text-muted-foreground hover:text-navy hover:bg-muted transition-colors"
-                    onClick={() => setIsMobileMenuOpen(false)}
-                  >
+                    onClick={() => setIsMobileMenuOpen(false)}>
                     {item.label}
                   </Link>
                 ))}
                 <div className="px-4 pt-4 space-y-2">
-                  <Button variant="outline" className="w-full text-navy bg-transparent">
+                  <Button
+                    variant="outline"
+                    className="w-full text-navy bg-transparent">
                     Inloggen
                   </Button>
-                  <Button className="w-full bg-orange text-accent-foreground hover:bg-orange/90 font-semibold" asChild>
+                  <Button
+                    className="w-full bg-orange text-accent-foreground hover:bg-orange/90 font-semibold"
+                    asChild>
                     <a href="#cursussen">Direct Boeken</a>
                   </Button>
                 </div>

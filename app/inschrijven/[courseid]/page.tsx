@@ -87,14 +87,14 @@ export default function InschrijvenPage() {
         const foundCourse = courses.find((c: CourseInfo) => c.id === courseId);
 
         if (!foundCourse) {
-          router.push("/#cursussen");
+          router.push("/inschrijven");
           return;
         }
 
         setCourse(foundCourse);
       } catch (error) {
         console.error("Error fetching course:", error);
-        router.push("/#cursussen");
+        router.push("/#inschrijven");
       } finally {
         setIsLoading(false);
       }
