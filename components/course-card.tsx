@@ -10,7 +10,6 @@ import { motion } from "framer-motion";
 
 export interface CourseData {
   id: string;
-  variantId: string; // Shopify variant ID
   date: string;
   priceId: string;
   dayOfWeek: string;
@@ -24,7 +23,7 @@ export interface CourseData {
 
 interface CourseCardProps {
   course: CourseData;
-  onEnroll?: (variantId: string, quantity: number) => Promise<void>;
+  onEnroll?: (courseId: string, quantity: number) => Promise<void>;
 }
 
 export function CourseCard({ course, onEnroll }: CourseCardProps) {
@@ -47,12 +46,7 @@ export function CourseCard({ course, onEnroll }: CourseCardProps) {
 
   const handleEnroll = async () => {
     if (onEnroll && !isFull) {
-      setIsLoading(true);
-      try {
-        await onEnroll(course.variantId, quantity);
-      } finally {
-        setIsLoading(false);
-      }
+      await onEnroll(course.id, 1);
     }
   };
 
@@ -123,47 +117,14 @@ export function CourseCard({ course, onEnroll }: CourseCardProps) {
               />
             </div>
 
-            {/* Quantity, Price & CTA */}
+            {/* Price & CTA */}
             <div className="flex flex-col items-end gap-3">
-              {/* Quantity selector */}
-              {!isFull && (
-                <div className="flex items-center gap-2">
-                  <span className="text-sm text-muted-foreground mr-2">
-                    Aantal personen:
-                  </span>
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    className="h-8 w-8 bg-transparent"
-                    onClick={() => handleQuantityChange(-1)}
-                    disabled={quantity <= 1}>
-                    <Minus className="w-4 h-4" />
-                  </Button>
-                  <span className="w-8 text-center font-semibold text-navy">
-                    {quantity}
-                  </span>
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    className="h-8 w-8 bg-transparent"
-                    onClick={() => handleQuantityChange(1)}
-                    disabled={quantity >= maxQuantity}>
-                    <Plus className="w-4 h-4" />
-                  </Button>
-                </div>
-              )}
-
               <div className="text-right">
-                {quantity > 1 && (
-                  <div className="text-sm text-muted-foreground">
-                    {quantity}x €{course.price}
-                  </div>
-                )}
                 <span className="text-2xl font-bold text-navy">
-                  €{subtotal}
+                  €{course.price}
                 </span>
                 <span className="text-sm text-muted-foreground ml-1">
-                  excl. BTW
+                  per persoon
                 </span>
               </div>
               <Button
