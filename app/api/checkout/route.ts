@@ -13,31 +13,21 @@ interface Participant {
 }
 
 export async function POST(req: Request) {
-  // Verplaats de initialisatie naar HIER
   if (!process.env.STRIPE_SECRET_KEY) {
     return NextResponse.json(
-      { error: "Stripe Secret Key is missing in server environment" },
+      { error: "Stripe Secret Key is missing" },
       { status: 500 },
     );
   }
 
   const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-    // We gebruiken 'as any' om TypeScript tevreden te houden,
-    // maar we gebruiken de versie die de library verwacht.
     apiVersion: "2026-01-28.clover" as any,
   });
 
   try {
     const { courseId, priceId, quantity, participants } = await req.json();
 
-    if (!priceId || !quantity) {
-      return NextResponse.json(
-        { error: "Price ID and quantity are required" },
-        { status: 400 },
-      );
-    }
-
-    // Convert participants array to flat metadata object
+    // JOUW METADATA LOGICA (ongewijzigd)
     const metadata: Record<string, string> = {
       course_id: courseId,
       aantal_deelnemers: quantity.toString(),
@@ -57,7 +47,12 @@ export async function POST(req: Request) {
         metadata[`deelnemer_${num}_email`] = participant.email;
       });
     }
-    const baseUrl = process.env.NEXT_PUBLIC_URL;
+
+    // DE URL FIX: Zorg dat baseUrl klopt
+    const baseUrl =
+      process.env.NEXT_PUBLIC_URL?.replace(/\/$/, "") ||
+      "https://www.bhv-certificering.nl";
+
     const session = await stripe.checkout.sessions.create({
       line_items: [
         {
@@ -66,21 +61,20 @@ export async function POST(req: Request) {
         },
       ],
       mode: "payment",
-      // Gebruik {CHECKOUT_SESSION_ID} (Stripe vult dit zelf in)
       success_url: `${baseUrl}/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${baseUrl}/inschrijven/${courseId}`,
       automatic_tax: { enabled: false },
       billing_address_collection: "required",
       phone_number_collection: { enabled: true },
       locale: "nl",
-      metadata: metadata,
+      metadata: metadata, // HIER wordt je metadata meegegeven
     });
 
     return NextResponse.json({ url: session.url });
   } catch (error) {
-    console.error("Error creating  session:", error);
+    console.error("Stripe Error:", error);
     return NextResponse.json(
-      { error: "Failed to create  session" },
+      { error: "Failed to create session" },
       { status: 500 },
     );
   }
