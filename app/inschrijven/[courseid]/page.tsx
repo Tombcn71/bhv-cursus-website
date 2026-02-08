@@ -33,6 +33,7 @@ import { motion, AnimatePresence } from "framer-motion";
 
 interface CourseInfo {
   id: string;
+  priceId: string; // ← Voeg deze regel toe
   title: string;
   date: string;
   dayOfWeek: string;
