@@ -23,7 +23,7 @@ export interface CourseData {
 
 interface CourseCardProps {
   course: CourseData;
-  onEnroll?: (courseId: string, quantity: number) => Promise<void>;
+  onEnroll?: (courseId: string) => Promise<void>;
 }
 
 export function CourseCard({ course, onEnroll }: CourseCardProps) {
@@ -46,7 +46,7 @@ export function CourseCard({ course, onEnroll }: CourseCardProps) {
 
   const handleEnroll = async () => {
     if (onEnroll && !isFull) {
-      await onEnroll(course.id, 1);
+      await onEnroll(course.id);
     }
   };
 
