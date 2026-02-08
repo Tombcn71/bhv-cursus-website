@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Calendar, MapPin, Users, Loader2, Plus, Minus } from "lucide-react";
 import { motion } from "framer-motion";
+import Link from "next/link";
 
 export interface CourseData {
   id: string;
@@ -127,24 +128,8 @@ export function CourseCard({ course, onEnroll }: CourseCardProps) {
                   per persoon
                 </span>
               </div>
-              <Button
-                onClick={handleEnroll}
-                disabled={isFull || isLoading}
-                className={`min-w-[140px] font-semibold ${
-                  isFull
-                    ? "bg-muted text-muted-foreground"
-                    : "bg-orange text-accent-foreground hover:bg-orange/90"
-                }`}>
-                {isLoading ? (
-                  <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Laden...
-                  </>
-                ) : isFull ? (
-                  "Volzet"
-                ) : (
-                  "Schrijf nu in"
-                )}
+              <Button asChild>
+                <Link href={`/inschrijven/${course.id}`}>Schrijf nu in</Link>
               </Button>
             </div>
           </div>
