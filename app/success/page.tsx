@@ -89,22 +89,22 @@ function SuccessContent() {
             </Button>
           </div>
 
-          <Card className="p-6 bg-navy text-background max-w-md mx-auto">
-            <h3 className="font-semibold mb-3">Nog vragen?</h3>
-            <p className="text-background/70 text-sm mb-4">
+          <Card className="p-6 bg-muted/50 text-foreground max-w-md mx-auto">
+            <h3 className="font-semibold mb-3 text-navy">Nog vragen?</h3>
+            <p className="text-muted-foreground text-sm mb-4">
               Neem gerust contact met ons op als je vragen hebt over je
               inschrijving.
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4 text-sm">
               <a
                 href="mailto:info@bhv-certificering.nl"
-                className="flex items-center gap-2 text-background/90 hover:text-background transition-colors">
+                className="flex items-center gap-2 text-orange hover:text-orange/80 transition-colors">
                 <Mail className="w-4 h-4" />
                 info@bhv-certificering.nl
               </a>
               <a
                 href="tel:+31174123456"
-                className="flex items-center gap-2 text-background/90 hover:text-background transition-colors">
+                className="flex items-center gap-2 text-orange hover:text-orange/80 transition-colors">
                 <Phone className="w-4 h-4" />
                 0174 - 123 456
               </a>

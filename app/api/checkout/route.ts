@@ -53,6 +53,9 @@ export async function POST(req: Request) {
       process.env.NEXT_PUBLIC_URL?.replace(/\/$/, "") ||
       "https://www.bhv-certificering.nl";
 
+    // Vlak voor const session = await stripe.checkout.sessions.create
+    console.log("📦 Metadata being sent:", metadata);
+    console.log("📦 Metadata keys count:", Object.keys(metadata).length);
     const session = await stripe.checkout.sessions.create({
       line_items: [
         {

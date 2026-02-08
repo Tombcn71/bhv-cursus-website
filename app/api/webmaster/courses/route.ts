@@ -2,54 +2,44 @@ import { NextResponse } from "next/server";
 import Stripe from "stripe";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: "2026-01-28.clover",
+  apiVersion: "2026-01-28.clover" as any,
 });
 
 export async function GET() {
   try {
-    // Get all products (courses)
     const products = await stripe.products.list({
       active: true,
       expand: ["data.default_price"],
     });
 
-    // Get all successful payments
-    const payments = await stripe.paymentIntents.list({
+    const sessions = await stripe.checkout.sessions.list({
       limit: 100,
-      expand: ["data.charges.data.balance_transaction"],
     });
 
-    // Filter successful payments only
-    const successfulPayments = payments.data.filter(
-      (payment) => payment.status === "succeeded",
+    const successfulSessions = sessions.data.filter(
+      (session) => session.payment_status === "paid",
     );
 
-    // Group payments by product
     const courseStats = products.data.map((product) => {
-      const price = product.default_price as Stripe.Price;
-
-      // Trim metadata keys
+      const price = product.default_price as Stripe.Price | null;
       const meta: Record<string, string> = {};
-      Object.keys(product.metadata).forEach((key) => {
-        meta[key.trim()] = product.metadata[key];
-      });
 
-      // Find all payments for this product
-      const productPayments = successfulPayments.filter((payment) => {
-        // Check if payment metadata contains this course_id
-        return payment.metadata?.course_id === product.id;
-      });
+      if (product.metadata) {
+        Object.keys(product.metadata).forEach((key) => {
+          meta[key.trim()] = product.metadata[key];
+        });
+      }
 
-      // Count total participants from all bookings
-      const totalParticipants = productPayments.reduce((sum, payment) => {
-        const count = parseInt(payment.metadata?.aantal_deelnemers || "0");
-        return sum + count;
+      const productSessions = successfulSessions.filter(
+        (session) => session.metadata?.course_id === product.id,
+      );
+
+      const totalParticipants = productSessions.reduce((sum, session) => {
+        const count = parseInt(session.metadata?.aantal_deelnemers || "0", 10);
+        return sum + (isNaN(count) ? 0 : count);
       }, 0);
 
-      // Format date
-      const datumStr = meta.datum || meta.date;
-      const datum = datumStr ? new Date(datumStr) : new Date();
-      const day = datum.getDate();
+      // --- DE DATUM LOGICA ---
       const months = [
         "jan",
         "feb",
@@ -64,32 +54,38 @@ export async function GET() {
         "nov",
         "dec",
       ];
-      const month = months[datum.getMonth()];
-      const formattedDate = datumStr ? `${day} ${month}` : "Datum volgt";
+
+      const datumStr = meta.datum || meta.date;
+      let formattedDate = "Datum volgt";
+      let sortDate = new Date(2099, 0, 1); // Fallback voor sortering
+
+      if (datumStr) {
+        const d = new Date(datumStr);
+        if (!isNaN(d.getTime())) {
+          sortDate = d;
+          formattedDate = `${d.getDate()} ${months[d.getMonth()]}`;
+        }
+      }
 
       return {
         id: product.id,
         title: product.name,
         date: formattedDate,
         dayOfWeek: meta.tijd || "Tijd volgt",
-        totalBookings: productPayments.length,
+        totalBookings: productSessions.length,
         totalParticipants: totalParticipants,
-        priceId: price.id,
-        sortDate: datum,
+        priceId: price?.id || null,
+        sortDate: sortDate,
       };
     });
 
-    // Sort by date
     const sortedCourses = courseStats
-      .filter((course) => course.totalParticipants > 0) // Only show courses with bookings
+      .filter((course) => course.totalParticipants > 0)
       .sort((a, b) => a.sortDate.getTime() - b.sortDate.getTime());
 
     return NextResponse.json(sortedCourses);
-  } catch (error) {
-    console.error("Error fetching course statistics:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch statistics" },
-      { status: 500 },
-    );
+  } catch (error: any) {
+    console.error("Fout in webmaster route:", error.message);
+    return NextResponse.json({ error: "Stripe data error" }, { status: 500 });
   }
 }
