@@ -24,7 +24,6 @@ export function Navigation() {
     { label: "Reviews", href: "#reviews" },
     { label: "FAQ", href: "#faq" },
     { label: "Contact", href: "/contact" },
-    { label: "Inschrijven", href: "/inschrijven" },
   ];
 
   return (
