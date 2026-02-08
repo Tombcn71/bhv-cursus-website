@@ -128,7 +128,14 @@ export function CourseCard({ course, onEnroll }: CourseCardProps) {
                   per persoon
                 </span>
               </div>
-              <Button asChild>
+              <Button
+                asChild
+                disabled={isFull}
+                className={`min-w-[140px] font-semibold ${
+                  isFull
+                    ? "bg-muted text-muted-foreground"
+                    : "bg-orange text-accent-foreground hover:bg-orange/90"
+                }`}>
                 <Link href={`/inschrijven/${course.id}`}>Schrijf nu in</Link>
               </Button>
             </div>
