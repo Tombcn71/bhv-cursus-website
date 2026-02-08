@@ -94,7 +94,7 @@ export default function InschrijvenPage() {
         setCourse(foundCourse);
       } catch (error) {
         console.error("Error fetching course:", error);
-        router.push("/#inschrijven");
+        router.push("/inschrijven");
       } finally {
         setIsLoading(false);
       }
