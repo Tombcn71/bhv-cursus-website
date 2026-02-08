@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState, Suspense } from "react";
-import { useSearchParams } from "next/navigation";
 import {
   Card,
   CardContent,
@@ -10,9 +9,8 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Download, Calendar, Users, Lock } from "lucide-react";
+import { Loader2, Download, Calendar, Users } from "lucide-react";
 
 interface CourseWithBookings {
   id: string;
@@ -24,38 +22,17 @@ interface CourseWithBookings {
   priceId: string;
 }
 
-// Dit is je originele logica, nu in een aparte functie voor Suspense
 function DashboardContent() {
-  const searchParams = useSearchParams();
-  const urlKey = searchParams.get("key");
-
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [key, setKey] = useState("");
   const [courses, setCourses] = useState<CourseWithBookings[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true); // Direct op true zetten
   const [downloadingCourse, setDownloadingCourse] = useState<string | null>(
     null,
   );
 
-  const CORRECT_KEY = process.env.NEXT_PUBLIC_WEBMASTER_KEY || "geheim123";
-
+  // Zodra de pagina opent, halen we direct de data op. Geen password check meer!
   useEffect(() => {
-    if (urlKey === CORRECT_KEY) {
-      setIsAuthenticated(true);
-      setKey(urlKey);
-      loadCourses();
-    }
-  }, [urlKey, CORRECT_KEY]);
-
-  const handleLogin = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (key === CORRECT_KEY) {
-      setIsAuthenticated(true);
-      loadCourses();
-    } else {
-      alert("Onjuiste sleutel");
-    }
-  };
+    loadCourses();
+  }, []);
 
   const loadCourses = async () => {
     setIsLoading(true);
@@ -94,47 +71,13 @@ function DashboardContent() {
     }
   };
 
-  if (!isAuthenticated) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-background to-muted/30 p-4">
-        <Card className="w-full max-w-md">
-          <CardHeader className="text-center">
-            <div className="mx-auto w-12 h-12 bg-orange/10 rounded-full flex items-center justify-center mb-4">
-              <Lock className="w-6 h-6 text-orange" />
-            </div>
-            <CardTitle>Webmaster Dashboard</CardTitle>
-            <CardDescription>
-              Voer de toegangssleutel in om door te gaan
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleLogin} className="space-y-4">
-              <Input
-                type="password"
-                placeholder="Toegangssleutel"
-                value={key}
-                onChange={(e) => setKey(e.target.value)}
-                className="text-center"
-              />
-              <Button
-                type="submit"
-                className="w-full bg-orange hover:bg-orange/90">
-                Inloggen
-              </Button>
-            </form>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-muted/30 py-12 px-4">
       <div className="max-w-6xl mx-auto">
         <div className="mb-8">
           <h1 className="text-3xl font-bold mb-2">Webmaster Dashboard</h1>
           <p className="text-muted-foreground">
-            Download deelnemerslijsten voor instructeurs
+            Direct toegang tot deelnemerslijsten (beveiliging uitgeschakeld)
           </p>
         </div>
 
@@ -207,7 +150,6 @@ function DashboardContent() {
   );
 }
 
-// Dit is de hoofdexport die Next.js tevreden houdt tijdens de build
 export default function WebmasterPage() {
   return (
     <Suspense
