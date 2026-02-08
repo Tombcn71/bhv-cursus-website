@@ -26,10 +26,9 @@ interface CourseWithBookings {
 
 function DashboardContent() {
   const searchParams = useSearchParams();
-  // Gebruik een fallback voor urlKey om crashes te voorkomen
-  const urlKey = searchParams ? searchParams.get("key") : null;
 
-  const [mounted, setMounted] = useState(false);
+  // States
+  const [isLoaded, setIsLoaded] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [key, setKey] = useState("");
   const [courses, setCourses] = useState<CourseWithBookings[]>([]);
@@ -38,22 +37,28 @@ function DashboardContent() {
     null,
   );
 
-  // Pak de key uit env of gebruik de backup
   const CORRECT_KEY = process.env.NEXT_PUBLIC_WEBMASTER_KEY || "geheim123";
 
-  // Stap 1: Zorg dat de component eerst veilig mount
+  // 1. Zorg dat we pas renderen als we in de browser zijn (voorkomt wit scherm)
   useEffect(() => {
-    setMounted(true);
-  }, []);
+    setIsLoaded(true);
 
-  // Stap 2: Check de URL key
-  useEffect(() => {
-    if (mounted && urlKey === CORRECT_KEY) {
+    // Check direct of er een key in de URL staat
+    const urlKey = searchParams.get("key");
+    if (urlKey === CORRECT_KEY) {
       setIsAuthenticated(true);
-      setKey(urlKey || "");
+      setKey(urlKey);
+      // We kunnen loadCourses hier niet direct aanroepen zonder async,
+      // dus we laten de useEffect hieronder het doen via de isAuthenticated state.
+    }
+  }, [searchParams, CORRECT_KEY]);
+
+  // 2. Laad data zodra geauthenticeerd
+  useEffect(() => {
+    if (isAuthenticated) {
       loadCourses();
     }
-  }, [mounted, urlKey, CORRECT_KEY]);
+  }, [isAuthenticated]);
 
   const loadCourses = async () => {
     setIsLoading(true);
@@ -74,7 +79,6 @@ function DashboardContent() {
     e.preventDefault();
     if (key === CORRECT_KEY) {
       setIsAuthenticated(true);
-      loadCourses();
     } else {
       alert("Onjuiste sleutel");
     }
@@ -95,24 +99,26 @@ function DashboardContent() {
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
     } catch (error) {
-      console.error("Error downloading:", error);
       alert("Download mislukt.");
     } finally {
       setDownloadingCourse(null);
     }
   };
 
-  // Voorkom server-side rendering issues door niks te tonen tot mounted
-  if (!mounted) return null;
+  // Cruciaal: toon NIETS (zelfs geen lader) totdat de browser de JS heeft geparsed.
+  // Dit voorkomt de mismatch tussen server en client die het witte scherm veroorzaakt.
+  if (!isLoaded) return null;
 
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
+      <div className="min-h-screen flex items-center justify-center bg-muted/30 p-4">
         <Card className="w-full max-w-md">
           <CardHeader className="text-center">
-            <Lock className="mx-auto w-10 h-10 text-orange-500 mb-2" />
+            <div className="mx-auto w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center mb-4">
+              <Lock className="w-6 h-6 text-orange-600" />
+            </div>
             <CardTitle>Webmaster Dashboard</CardTitle>
-            <CardDescription>Voer de toegangssleutel in</CardDescription>
+            <CardDescription>Toegangssleutel vereist</CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleLogin} className="space-y-4">
@@ -121,8 +127,11 @@ function DashboardContent() {
                 placeholder="Toegangssleutel"
                 value={key}
                 onChange={(e) => setKey(e.target.value)}
+                className="text-center"
               />
-              <Button type="submit" className="w-full bg-orange-600">
+              <Button
+                type="submit"
+                className="w-full bg-orange-600 hover:bg-orange-700 text-white">
                 Inloggen
               </Button>
             </form>
@@ -133,33 +142,56 @@ function DashboardContent() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12 px-4">
-      <div className="max-w-4xl mx-auto">
+    <div className="min-h-screen bg-muted/10 py-12 px-4">
+      <div className="max-w-6xl mx-auto">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold">Cursus Overzicht</h1>
-          <p className="text-gray-600">Download deelnemerslijsten</p>
+          <h1 className="text-3xl font-bold">Webmaster Dashboard</h1>
+          <p className="text-muted-foreground">Download deelnemerslijsten</p>
         </div>
 
         {isLoading ? (
-          <Loader2 className="w-8 h-8 animate-spin mx-auto text-orange-600" />
+          <div className="flex justify-center py-12">
+            <Loader2 className="w-8 h-8 animate-spin text-orange-600" />
+          </div>
+        ) : courses.length === 0 ? (
+          <Card>
+            <CardContent className="py-12 text-center text-muted-foreground">
+              Geen boekingen gevonden
+            </CardContent>
+          </Card>
         ) : (
-          <div className="grid gap-4">
+          <div className="grid gap-6">
             {courses.map((course) => (
               <Card key={course.id}>
-                <CardContent className="p-6 flex items-center justify-between">
-                  <div>
-                    <h3 className="font-bold text-lg">{course.title}</h3>
-                    <div className="flex gap-4 text-sm text-gray-500">
-                      <span>{course.date}</span>
-                      <span>{course.totalParticipants} deelnemers</span>
+                <CardHeader>
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <CardTitle className="text-xl">{course.title}</CardTitle>
+                      <div className="flex gap-4 mt-2 text-sm text-muted-foreground italic">
+                        <span className="flex items-center gap-1">
+                          <Calendar className="w-4 h-4" /> {course.date}
+                        </span>
+                        <span>{course.dayOfWeek}</span>
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      <Badge variant="outline">
+                        {course.totalParticipants} deelnemers
+                      </Badge>
                     </div>
                   </div>
+                </CardHeader>
+                <CardContent className="flex justify-end">
                   <Button
                     onClick={() => handleDownload(course.id, course.title)}
-                    disabled={downloadingCourse === course.id}>
-                    {downloadingCourse === course.id
-                      ? "Laden..."
-                      : "Download Excel"}
+                    disabled={!!downloadingCourse}
+                    className="bg-orange-600 hover:bg-orange-700 text-white">
+                    {downloadingCourse === course.id ? (
+                      <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                    ) : (
+                      <Download className="w-4 h-4 mr-2" />
+                    )}
+                    Download Excel
                   </Button>
                 </CardContent>
               </Card>
@@ -173,12 +205,7 @@ function DashboardContent() {
 
 export default function WebmasterPage() {
   return (
-    <Suspense
-      fallback={
-        <div className="flex h-screen items-center justify-center">
-          Laden...
-        </div>
-      }>
+    <Suspense fallback={null}>
       <DashboardContent />
     </Suspense>
   );
