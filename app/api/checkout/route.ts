@@ -61,6 +61,7 @@ export async function POST(req: Request) {
         {
           price: priceId,
           quantity: quantity,
+          tax_rates: ["txr_1T03RDHkZwiISBXH0F3DHgUQ"],
         },
       ],
       mode: "payment",
@@ -68,7 +69,7 @@ export async function POST(req: Request) {
       cancel_url: `${baseUrl}/inschrijven/${courseId}`,
       automatic_tax: { enabled: true },
       billing_address_collection: "required",
-      phone_number_collection: { enabled: true },
+      phone_number_collection: { enabled: false },
       locale: "nl",
       metadata: metadata, // HIER wordt je metadata meegegeven
     });
