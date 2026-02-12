@@ -125,7 +125,7 @@ export function CourseCard({ course, onEnroll }: CourseCardProps) {
                   €{course.price}
                 </span>
                 <span className="text-sm text-muted-foreground ml-1">
-                  per persoon
+                  excl. BTW
                 </span>
               </div>
               <Button
