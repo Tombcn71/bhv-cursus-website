@@ -65,6 +65,7 @@ export async function POST(req: Request) {
         },
       ],
       mode: "payment",
+      allow_promotion_codes: true,
       success_url: `${baseUrl}/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${baseUrl}/inschrijven/${courseId}`,
       automatic_tax: { enabled: false },
